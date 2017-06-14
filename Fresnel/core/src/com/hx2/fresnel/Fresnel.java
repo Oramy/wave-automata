@@ -3,6 +3,8 @@ package com.hx2.fresnel;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.plaf.multi.MultiRootPaneUI;
+
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
@@ -26,23 +28,6 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		public float h;
 		public float force;
 	}
-	public class Coupure{
-		public final int i, j;
-		public final Direction dir;
-		public Coupure(int i, int j, Direction dir){
-			this.i = i;
-			this.j = j;
-			this.dir = dir;
-		}
-	}
-	
-	/*
-	 * Murs
-	 * rectangle
-	 * Entrees/sorties
-	 * Afficher spécialement
-	 * Coef frottement fluide
-	 */
 	private static final int mag = 5;
 
 	SpriteBatch batch;
@@ -56,8 +41,6 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 	long msDelay = 16, lastUp;
 	int n = 100;
 	int it = 0;
-	float sqr2 = (float) Math.sqrt(2);
-	private boolean showVector = true;
 	private boolean showWaves = true;
 	private int itmult = 10;
 	private float ondefreq = 1f/2f;
@@ -66,7 +49,9 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 
 	private float dt = 0.01f;
 	
-	private int ci, cj = 0;
+	private boolean originePosee = false;
+	private int originI, originJ = 0;
+	private float basicK = 5f;
 
 	@Override
 	public void create () {
@@ -81,12 +66,16 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		this.coupures = new ArrayList<Coupure>();
 		
 		
-		this.walls.add(new Wall(0, n/2-5, n/2-8, 10, 10f, Direction.Up));
-		this.walls.add(new Wall(n/2-2, n/2-5, 4, 10, 10f, Direction.Up));
-		this.walls.add(new Wall(n/2+8, n/2-5, n, 10, 10f, Direction.Up));
+		addWall(new Wall(0, n/2-5, n/2-8, 10, 10f, Direction.Up));
+		addWall(new Wall(n/2-2, n/2-5, 4, 10, 10f, Direction.Up));
+		addWall(new Wall(n/2+8, n/2-5, n/2-8-1, 10, 10f, Direction.Up));
 		
 		
 		
+	}
+	public void addWall(Wall wall){
+		this.walls.add(wall);
+		this.coupures.addAll(wall.generateCoupures(n));
 	}
 
 	public void initPoints(){
@@ -108,7 +97,6 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 	public void updateSpringForce(){
 		float force = 0f;
 		
-		//Forces basiques sur les 
 		for(int i = 0; i < n; i++){
 			for(int j = 0; j < n; j++){
 				force = 0f;
@@ -126,31 +114,6 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 					force += wall.process(points, i, j);
 				}
 				points[i][j].force = force;
-				//				if((i >= n/2 && i <= n/2 + 5) && j == n/2 - 2 ){
-				//					force -= (points[i][j-1].h-points[i][j].h);
-				//				}
-				//				if((i >= n/2 && i <= n/2 + 5) && j == n/2 - 3 ){
-				//					force -= (points[i][j+1].h-points[i][j].h);
-				//				}
-				//				if((i >= n/2 && i <= n/2 + 5) && j == n/2 + 2 ){
-				//					force -= (points[i][j+1].h-points[i][j].h);
-				//				}
-				//				if((i >= n/2 && i <= n/2 + 5) && j == n/2 + 3 ){
-				//					force -= (points[i][j-1].h-points[i][j].h);
-				//				}
-				//				if((j <= n/2-2 || j >= n/2 +2)){
-				//					if(i == n/2 + 5){
-				//						force -= (points[i+1][j].h-points[i][j].h);
-				//					}
-				//					if(i == n/2 + 6){
-				//						force -= (points[i-1][j].h-points[i][j].h);
-				//					}
-				//					if((i >= n/2 && i <= n/2 + 5)){
-				//						force -= points[i][j].vel*0.05f*((i - n/2)*(i - n/2));
-				//					}
-				//				}
-				
-				
 			}
 		}
 		for(Coupure coupure : coupures){
@@ -187,7 +150,7 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 				npoints[i][j].vel = points[i][j].vel +  points[i][j].force*dt;
 				npoints[i][j].h = points[i][j].h + (points[i][j].vel+npoints[i][j].vel)/2f*dt +  points[i][j].force/2f*dt*dt;
 				
-				if((i==0) && ((float)it * ondefreq)< 360f * nbExcitation){
+				if((j==n-1) && ((float)it * ondefreq)< 360f * nbExcitation){
 					npoints[i][j].h = MathUtils.sinDeg(((float)it)*ondefreq);
 				}
 			}
@@ -226,18 +189,13 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 				for (int j = 0; j < n; j++) {
 					float c = MathUtils.clamp(points[i][j].h/2f, -1f, 1f);
 					c = (c+1f)/2f;
-//					if((j <= n/2-2 || j >= n/2 +2)){
-//						if((i >= n/2 && i <= n/2 + 5)){
-//							c = 0f;
-//						}
-//					}
 					pixmap.setColor(c, c, c, 1f);
 					pixmap.fillRectangle(i*mag, j*mag, mag, mag);
 				}
 			} 
 			for(Wall wall : walls){
-				for (int i = (int)wall.x; i < (int)(wall.x + wall.width); i++) {
-					for (int j = (int)wall.y; j < (int)(wall.y + wall.height); j++) {
+				for (int i = (int)wall.x; i <= (int)(wall.x + wall.width); i++) {
+					for (int j = (int)wall.y; j <= (int)(wall.y + wall.height); j++) {
 						float c = wall.gradient(i, j);
 						pixmap.setColor(c, c, 1f-c, 0.5f);
 						pixmap.fillRectangle(i*mag, j*mag, mag, mag);
@@ -246,11 +204,8 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 			}
 			pixmap.setColor(1f, 0f, 0f, 1f);
 			for(Coupure coupure : coupures){
-				System.out.println(coupure.dir.ordinal());
 				int i = coupure.i;
 				int j = coupure.j;
-				int i2  = i + dis[coupure.dir.ordinal()];
-				int j2 = j + djs[coupure.dir.ordinal()];
 				
 				switch(coupure.dir){
 				case Down:
@@ -272,7 +227,6 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 				
 				
 			}
-			//			fillPixmap(pixmap, points, n, n, true);
 		}
 		else
 		{
@@ -280,28 +234,16 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 					pixmap.drawLine(0, pixmap.getHeight()/2, pixmap.getWidth(), pixmap.getHeight()/2);
 					float c = MathUtils.clamp(points[i][10].h/2f, -1f, 1f);
 					c = (c+1f)/2f;
-//					if((j <= n/2-2 || j >= n/2 +2)){
-//						if((i >= n/2 && i <= n/2 + 5)){
-//							c = 0f;
-//						}
-//					}
+
 					pixmap.setColor(0,0,0, 1f);
 					pixmap.drawLine(i*mag, (int) (pixmap.getWidth()/2f + points[i][10].h*pixmap.getWidth()/10f), (i+1)*mag, (int) (pixmap.getWidth()/2f + points[i+1][10].h*pixmap.getWidth()/10f));
 			} 
 		}
 		
-		if(showVector){
-			pixmap.setColor(Color.GREEN);
-			//			for (int i = 0; i < n; i++) {
-			//				
-			//				pixmap.drawLine(i*mag + mag/2, n * mag/2, i*mag + mag/2, n * mag/2 + (int)( points[i][j].vel*500f));
-			//			} 
-
-		}
 		batch.begin();
 		batch.draw(pixmapTexture, 
 				Gdx.graphics.getWidth() / 2f - pixmapTexture.getWidth() /2f, Gdx.graphics.getHeight() /2f - pixmapTexture.getHeight() / 2f); //draw pixmap texture
-		Gdx.gl.glTexSubImage2D(Gdx.gl.GL_TEXTURE_2D, 0, 0, 0, pixmapTexture.getWidth(), pixmapTexture.getHeight(), //
+		Gdx.gl.glTexSubImage2D(GL20.GL_TEXTURE_2D, 0, 0, 0, pixmapTexture.getWidth(), pixmapTexture.getHeight(), //
 				pixmap.getGLFormat(), pixmap.getGLType(), pixmap.getPixels());
 		batch.end();
 
@@ -317,9 +259,6 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		if(keycode == Keys.DOWN){
 			msDelay -= 1;
 		}
-		if(keycode == Keys.V){
-			showVector = !showVector;
-		}
 		if(keycode == Keys.W){
 			showWaves = !showWaves;
 		}
@@ -331,6 +270,8 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		}
 		if(keycode == Keys.I){
 			initPoints();
+			walls.clear();
+			coupures.clear();
 		}
 		if(keycode == Keys.L){
 			it =  0;
@@ -354,7 +295,37 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 		int i = screenX / mag;
 		int j = screenY / mag;
-		coupures.add(new Coupure(i, j, Direction.Down));
+		
+		
+		if(!originePosee){
+			originJ = j;
+			originI = i;
+		}
+		else
+		{
+			int mi = Math.min(i, originI);
+			int mj = Math.min(j, originJ);
+			int Mi = Math.max(i, originI);
+			int Mj = Math.max(j, originJ);
+			
+			Direction dir;
+			if(Mi-mi > Mj-mj){
+				if(originJ > j)
+					dir = Direction.Up;
+				else
+					dir = Direction.Down;
+			}
+			else{
+				if(originI > i)
+					dir = Direction.Left;
+				else
+					dir = Direction.Right;
+			}
+			
+			Wall wall = new Wall(mi, mj, Mi-mi, Mj-mj, basicK, dir);
+			addWall(wall);
+		}
+		originePosee = !originePosee;
 		return false;
 	}
 
@@ -366,13 +337,11 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 
 	@Override
 	public boolean touchDragged(int screenX, int screenY, int pointer) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 
 	@Override
 	public boolean mouseMoved(int screenX, int screenY) {
-		// TODO Auto-generated method stub
 		return false;
 	}
 

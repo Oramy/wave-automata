@@ -1,5 +1,8 @@
 package com.hx2.fresnel;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.hx2.fresnel.Fresnel.Direction;
 import com.hx2.fresnel.Fresnel.Point;
 
@@ -28,6 +31,38 @@ public class Wall{
 		
 		}	
 		return 0;
+	}
+	public List<Coupure> generateCoupures(int n){
+		List<Coupure> coupures = new ArrayList<Coupure>();
+		if(dir != Direction.Left)
+		{
+			for(int j = (int) y; j <= y + height; j++){
+				if(x+width < n-1)
+					coupures.add(new Coupure((int) (x+width), j, Direction.Right));
+			}
+		}
+		if(dir != Direction.Right)
+		{
+			for(int j = (int) y; j <= y + height; j++){
+				if(x > 1)
+					coupures.add(new Coupure((int) x, j, Direction.Left));
+			}
+		}
+		if(dir != Direction.Up)
+		{
+			for(int i = (int) x; i <= x + width; i++){
+				if(y+height < n-1)
+					coupures.add(new Coupure(i, (int) (y+height), Direction.Down));
+			}
+		}
+		if(dir != Direction.Down)
+		{
+			for(int i = (int) x; i <= x + width; i++){
+				if(y > 1)
+					coupures.add(new Coupure(i, (int) y, Direction.Up));
+			}
+		}
+		return coupures;
 	}
 	public float process(Point[][] points, int i, int j){
 		float force = 0f;
