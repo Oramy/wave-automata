@@ -32,12 +32,17 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 	int n = 500;
 	float it = 0f;
 	float sqr2 = (float) Math.sqrt(2);
-	private boolean showVector = true;
+	private boolean showVector = false;
+	private boolean showCelerity = true;
 	private boolean showWaves = true;
 	private int itmult = 1000;
 	private float dt = 1/1000f;
 	private float k_frot = 0.005f;
 	private float ondefreq = 1f/100f;
+	private float pas=0.01f;
+	private float k_ress=1f;
+	private float masse=1f;
+	private float celerity=pas*(float)Math.sqrt((double)k_ress/masse);
 
 	private int nbExcitation = 8;
 
@@ -72,15 +77,18 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 		for(int i = 0; i < n; i++){
 			npoints[i].force =  0;
 			npoints[i].force -= points[i].vel*k_frot;
+			
 			if(i >= 1 && i!= n-1)
 				npoints[i].force += points[i-1].h-points[i].h;
 			if(i < n-1)
 				npoints[i].force += points[i+1].h-points[i].h;
 			
+			npoints[i].force *= k_ress/masse;
+			
 			npoints[i].vel = points[i].vel +  points[i].force*dt;
 			npoints[i].h = points[i].h + (points[i].vel+npoints[i].vel)/2f*dt +  points[i].force/2f*dt*dt;
 			
-			if((i == 0) && (it * ondefreq)< nbExcitation){
+			if(i == 0){
 				npoints[i].h = MathUtils.sinDeg(it*ondefreq*360);
 				npoints[i].vel = 0f;
 			}
@@ -104,9 +112,15 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 
 		pixmap.setColor(1f, 1f, 1f, 1f);
 		pixmap.fill();
-		pixmap.setColor(0f, 0f, 0f, 1f);
+		if(showCelerity){
+			pixmap.setColor(Color.GOLD);
+			for (int i = 0; i < n; i++) {
+				if(i<celerity*it/pas)
+				pixmap.drawLine(i*mag + mag/2, n * mag, i*mag + mag/2, 0);
+			} 
+		}
 		if(showWaves){
-
+			pixmap.setColor(Color.BLACK);
 			for (int i = 0; i < n; i++) {
 
 				pixmap.fillRectangle(i*mag, n * mag/2 + (int)(points[i].h*50f), mag, mag);
@@ -155,6 +169,9 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 		}
 		if(keycode == Keys.L){
 			it = 0f;
+		}
+		if(keycode == Keys.C){
+			showCelerity=!showCelerity;
 		}
 		return false;
 	}
