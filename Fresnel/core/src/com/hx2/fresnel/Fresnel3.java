@@ -19,8 +19,6 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 		public float h;
 		public float force;
 	}
-	private static final int mag = 1;
-	private static final Vector2 XY = Vector2.X.cpy().add(Vector2.Y).nor();
 
 	SpriteBatch batch;
 	Texture img;
@@ -29,27 +27,27 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 	Point[] points;
 	Point[] npoints;
 	long msDelay = 16, lastUp;
-	int n = 500;
+	int n = 1000;
 	float it = 0f;
 	float sqr2 = (float) Math.sqrt(2);
 	private boolean showVector = false;
 	private boolean showCelerity = true;
 	private boolean showWaves = true;
 	private int itmult = 1000;
-	private float dt = 1/1000f;
-	private float k_frot = 0.005f;
-	private float ondefreq = 1f/100f;
+	private float dt = 1/10000f;
+	private float k_frot = 0.001f;
 	private float pas=0.01f;
 	private float k_ress=1f;
 	private float masse=1f;
-	private float celerity=pas*(float)Math.sqrt((double)k_ress/masse);
+	private float celerity= pas * (float)Math.sqrt((double)k_ress/masse);
+	private float puls = (float) 4f*MathUtils.PI*celerity/(pas*(n+1));
 
-	private int nbExcitation = 8;
+	private int nbExcitation = 6;
 
 	@Override
 	public void create () {
 		batch = new SpriteBatch();
-		pixmap = new Pixmap( n * mag, n * mag, Format.RGB888);
+		pixmap = new Pixmap(n, n, Format.RGB888);
 		pixmapTexture = new Texture(pixmap, Pixmap.Format.RGB888, false);
 		points = new Point[n];
 		initPoints();
@@ -78,18 +76,23 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 			npoints[i].force =  0;
 			npoints[i].force -= points[i].vel*k_frot;
 			
-			if(i >= 1 && i!= n-1)
+			if(i >= 1)
 				npoints[i].force += points[i-1].h-points[i].h;
 			if(i < n-1)
 				npoints[i].force += points[i+1].h-points[i].h;
 			
-			npoints[i].force *= k_ress/masse;
+//			if(i == 0){
+//				npoints[i].force += (float) Math.sin(it*puls)/20;
+//			}
 			
+			
+			
+			npoints[i].force *= k_ress/masse;
 			npoints[i].vel = points[i].vel +  points[i].force*dt;
 			npoints[i].h = points[i].h + (points[i].vel+npoints[i].vel)/2f*dt +  points[i].force/2f*dt*dt;
 			
-			if(i == 0){
-				npoints[i].h = MathUtils.sinDeg(it*ondefreq*360);
+			if(i == 0 && it*puls < MathUtils.PI*2f*nbExcitation){
+				npoints[i].h = MathUtils.sin (it*puls) > 0f ? 2f : -2f;
 				npoints[i].vel = 0f;
 			}
 		}
@@ -114,32 +117,30 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 		pixmap.fill();
 		if(showCelerity){
 			pixmap.setColor(Color.GOLD);
-			for (int i = 0; i < n; i++) {
-				if(i<celerity*it/pas)
-				pixmap.drawLine(i*mag + mag/2, n * mag, i*mag + mag/2, 0);
-			} 
+			pixmap.fillRectangle(0, 0, (int) (celerity*it/pas), n);
+			
 		}
 		if(showWaves){
 			pixmap.setColor(Color.BLACK);
 			for (int i = 0; i < n; i++) {
 
-				pixmap.fillRectangle(i*mag, n * mag/2 + (int)(points[i].h*50f), mag, mag);
+				pixmap.drawPixel(i, n /2 + (int)(points[i].h*n/10f));
 			} 
 		}
 		if(showVector){
 			pixmap.setColor(Color.GREEN);
 			for (int i = 0; i < n; i++) {
 
-				pixmap.drawLine(i*mag + mag/2, n * mag/2, i*mag + mag/2, n * mag/2 + (int)( points[i].vel*500f));
+				pixmap.drawLine(i, n /2, i, n /2 + (int)( points[i].vel*500f));
 			} 
 
 		}
 		batch.begin();
 		batch.draw(pixmapTexture, 
-				Gdx.graphics.getWidth() / 2f - pixmapTexture.getWidth() /2f, Gdx.graphics.getHeight() /2f - pixmapTexture.getHeight() / 2f); //draw pixmap texture
-				Gdx.gl.glTexSubImage2D(Gdx.gl.GL_TEXTURE_2D, 0, 0, 0, pixmapTexture.getWidth(), pixmapTexture.getHeight(), //
-						pixmap.getGLFormat(), pixmap.getGLType(), pixmap.getPixels());
-				batch.end();
+				0f, 0f, 500f, 500f); //draw pixmap texture
+		Gdx.gl.glTexSubImage2D(Gdx.gl.GL_TEXTURE_2D, 0, 0, 0, pixmapTexture.getWidth(), pixmapTexture.getHeight(), //
+			pixmap.getGLFormat(), pixmap.getGLType(), pixmap.getPixels());
+		batch.end();
 
 	}
 
