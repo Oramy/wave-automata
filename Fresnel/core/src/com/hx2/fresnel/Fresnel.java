@@ -45,7 +45,9 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 	private int itmult = 10;
 	private float ondefreq = 1f/2f;
 
-	private int nbExcitation = 5;
+	private int nbExcitation = 0;
+	private boolean source = false;
+	private float phi=0;
 
 	private float dt = 0.01f;
 	
@@ -153,6 +155,16 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 				if((j==n-1) && ((float)it * ondefreq)< 360f * nbExcitation){
 					npoints[i][j].h = MathUtils.sinDeg(((float)it)*ondefreq);
 				}
+				
+				if(source && i==n/2 && j==n/2){
+					npoints[i][j].h=MathUtils.sinDeg(((float)it)*ondefreq);
+				}
+				if(source && i==n/2+6 && j==n/2){
+					npoints[i][j].h=MathUtils.sinDeg(((float)it)*ondefreq);
+				}
+				if(source && i==n/2-6 && j==n/2){
+					npoints[i][j].h=MathUtils.sinDeg(((float)it)*ondefreq+phi);
+				}
 			}
 		}
 	}
@@ -254,13 +266,17 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 	public boolean keyDown(int keycode) {
 
 		if(keycode == Keys.UP){
-			msDelay += 1;
+			phi += 5;
 		}
 		if(keycode == Keys.DOWN){
-			msDelay -= 1;
+			phi -= 5;
 		}
 		if(keycode == Keys.W){
-			showWaves = !showWaves;
+			addWall(8,0, 0, n-1);
+			addWall(n-1, 8, 0, 0);
+			addWall(n-9,0,n-1,n-1);
+			addWall(n-1,n-9,0,n-1);
+			
 		}
 		if(keycode == Keys.RIGHT){
 			nbExcitation += 1;
@@ -272,9 +288,17 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 			initPoints();
 			walls.clear();
 			coupures.clear();
+			source=false;
+			nbExcitation=0;
+		}
+		if(keycode == Keys.J){
+			initPoints();
 		}
 		if(keycode == Keys.L){
 			it =  0;
+		}
+		if(keycode == Keys.S){
+			source=!source;
 		}
 		return false;
 	}
@@ -291,6 +315,29 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		return false;
 	}
 
+	public void addWall(int originI, int originJ, int i, int j){
+		int mi = Math.min(i, originI);
+		int mj = Math.min(j, originJ);
+		int Mi = Math.max(i, originI);
+		int Mj = Math.max(j, originJ);
+		
+		Direction dir;
+		if(Mi-mi > Mj-mj){
+			if(originJ > j)
+				dir = Direction.Up;
+			else
+				dir = Direction.Down;
+		}
+		else{
+			if(originI > i)
+				dir = Direction.Left;
+			else
+				dir = Direction.Right;
+		}
+		
+		Wall wall = new Wall(mi, mj, Mi-mi, Mj-mj, basicK, dir);
+		addWall(wall);
+	}
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
 		int i = screenX / mag;
@@ -303,27 +350,7 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		}
 		else
 		{
-			int mi = Math.min(i, originI);
-			int mj = Math.min(j, originJ);
-			int Mi = Math.max(i, originI);
-			int Mj = Math.max(j, originJ);
-			
-			Direction dir;
-			if(Mi-mi > Mj-mj){
-				if(originJ > j)
-					dir = Direction.Up;
-				else
-					dir = Direction.Down;
-			}
-			else{
-				if(originI > i)
-					dir = Direction.Left;
-				else
-					dir = Direction.Right;
-			}
-			
-			Wall wall = new Wall(mi, mj, Mi-mi, Mj-mj, basicK, dir);
-			addWall(wall);
+			addWall(i, j, originI, originJ);
 		}
 		originePosee = !originePosee;
 		return false;
