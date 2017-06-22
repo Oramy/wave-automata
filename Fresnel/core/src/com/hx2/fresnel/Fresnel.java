@@ -28,7 +28,6 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		public float h;
 		public float force;
 	}
-	private static final int mag = 5;
 
 	SpriteBatch batch;
 	Texture pixmapTexture;
@@ -39,10 +38,10 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 	List<Wall> walls; 
 
 	long msDelay = 16, lastUp;
-	int n = 100;
+	int n = 400;
 	int it = 0;
 	private boolean showWaves = true;
-	private int itmult = 10;
+	private int itmult = 20;
 	private float ondefreq = 1f/2f;
 
 	private int nbExcitation = 0;
@@ -62,7 +61,7 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		initPoints();
 		lastUp = System.currentTimeMillis();
 		Gdx.input.setInputProcessor(this);
-		pixmap = new Pixmap( n * mag, n * mag, Format.RGB888);
+		pixmap = new Pixmap( n, n, Format.RGB888);
 		pixmapTexture = new Texture(pixmap, Pixmap.Format.RGB888, false);
 		this.walls = new ArrayList<Wall>();
 		this.coupures = new ArrayList<Coupure>();
@@ -159,10 +158,10 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 				if(source && i==n/2 && j==n/2){
 					npoints[i][j].h=MathUtils.sinDeg(((float)it)*ondefreq);
 				}
-				if(source && i==n/2+6 && j==n/2){
+				if(source && i==n/2+4 && j==n/2){
 					npoints[i][j].h=MathUtils.sinDeg(((float)it)*ondefreq);
 				}
-				if(source && i==n/2-6 && j==n/2){
+				if(source && i==n/2-4 && j==n/2){
 					npoints[i][j].h=MathUtils.sinDeg(((float)it)*ondefreq+phi);
 				}
 			}
@@ -170,6 +169,7 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 	}
 	public void update(){
 	
+		
 		updateSpringForce();
 		
 		updateCoordinates();
@@ -179,15 +179,19 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		Point[][] temp = points;
 		points = npoints;
 		npoints = temp;
+		
+		
 	}
 	@Override
 	public void render () {
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
+		long startTime = System.currentTimeMillis();
 		for(int i = 0 ; i < itmult ; i++)
 			update();	
-
+		System.out.println(System.currentTimeMillis() - startTime);
+		System.out.println(Gdx.graphics.getDeltaTime());
 
 		pixmap.setColor(1f, 1f, 1f, 1f);
 		pixmap.fill();
@@ -199,7 +203,7 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 					float c = MathUtils.clamp(points[i][j].h/2f, -1f, 1f);
 					c = (c+1f)/2f;
 					pixmap.setColor(c, c, c, 1f);
-					pixmap.fillRectangle(i*mag, j*mag, mag, mag);
+					pixmap.drawPixel(i, j);
 				}
 			} 
 			for(Wall wall : walls){
@@ -207,7 +211,7 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 					for (int j = (int)wall.y; j <= (int)(wall.y + wall.height); j++) {
 						float c = wall.gradient(i, j);
 						pixmap.setColor(c, c, 1f-c, 0.5f);
-						pixmap.fillRectangle(i*mag, j*mag, mag, mag);
+						pixmap.drawPixel(i, j);
 					}
 				}
 			}
@@ -218,16 +222,16 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 				
 				switch(coupure.dir){
 				case Down:
-					pixmap.drawLine(i*mag,(j+1)*mag, (i+1)*mag, (j+1)*mag);
+					pixmap.drawLine(i,(j+1), (i+1), (j+1));
 					break;
 				case Left:
-					pixmap.drawLine(i*mag,j*mag, i*mag, (j+1)*mag);
+					pixmap.drawLine(i,j, i, (j+1));
 					break;
 				case Right:
-					pixmap.drawLine((i+1)*mag,j*mag, (i+1)*mag, (j+1)*mag);
+					pixmap.drawLine((i+1),j, (i+1), (j+1));
 					break;
 				case Up:
-					pixmap.drawLine(i*mag,j*mag, (i+1)*mag, j*mag);
+					pixmap.drawLine(i,j, (i+1), j);
 					break;
 				default:
 					break;
@@ -245,13 +249,13 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 					c = (c+1f)/2f;
 
 					pixmap.setColor(0,0,0, 1f);
-					pixmap.drawLine(i*mag, (int) (pixmap.getWidth()/2f + points[i][10].h*pixmap.getWidth()/10f), (i+1)*mag, (int) (pixmap.getWidth()/2f + points[i+1][10].h*pixmap.getWidth()/10f));
+					pixmap.drawLine(i, (int) (pixmap.getWidth()/2f + points[i][10].h*pixmap.getWidth()/10f), (i+1), (int) (pixmap.getWidth()/2f + points[i+1][10].h*pixmap.getWidth()/10f));
 			} 
 		}
 		batch.begin();
 		pixmapTexture.draw(pixmap, 0, 0);
-		batch.draw(pixmapTexture, 
-				Gdx.graphics.getWidth() / 2f - pixmapTexture.getWidth() /2f, Gdx.graphics.getHeight() /2f - pixmapTexture.getHeight() / 2f); //draw pixmap texture
+		batch.draw(pixmapTexture,  0f, 0f,
+				500f, 500f); //draw pixmap texture
 		batch.end();
 		batch.begin();
 //		Fonts.choiceFont.draw(batch, "Dhuruhe", 20, 20);
@@ -338,8 +342,8 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 	}
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-		int i = screenX / mag;
-		int j = screenY / mag;
+		int i = screenX;
+		int j = screenY;
 		
 		
 		if(!originePosee){
