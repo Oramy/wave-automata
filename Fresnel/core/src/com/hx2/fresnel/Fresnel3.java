@@ -18,6 +18,7 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 		public float vel;
 		public float h;
 		public float force;
+		public float ampl;
 	}
 
 	SpriteBatch batch;
@@ -29,18 +30,23 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 	long msDelay = 16, lastUp;
 	int n = 1000;
 	float it = 0f;
-	float sqr2 = (float) Math.sqrt(2);
 	private boolean showVector = false;
 	private boolean showCelerity = true;
 	private boolean showWaves = true;
+	private boolean showAmpl = false;
+	private int measAmpl = 0;	
 	private int itmult = 1000;
-	private float dt = 1/10000f;
-	private float k_frot = 0.001f;
+	private float dt = 1/1000f;
+	private float k_frot = 0.00f;
 	private float pas=0.01f;
 	private float k_ress=1f;
 	private float masse=1f;
+	private float K=0.001f;
+	private float M=100f;
 	private float celerity= pas * (float)Math.sqrt((double)k_ress/masse);
-	private float puls = (float) 4f*MathUtils.PI*celerity/(pas*(n+1));
+//	private float puls = (float) 4f*MathUtils.PI*celerity/(pas*(n+1));
+	private float puls = (float) Math.sqrt((K+k_ress)/M);
+	private float freq = puls/MathUtils.PI/2f;
 
 	private int nbExcitation = 6;
 
@@ -62,41 +68,60 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 			points[i] = new Point();
 			points[i].vel = 0f;
 			points[i].h = 0f;
+			points[i].ampl = 0f;
 
 			npoints[i] = new Point();
 			npoints[i].vel = 0f;
 			npoints[i].h = 0f;
-
+			points[i].ampl = 0f;
 		}
 		it = 0f;
 	}
 	public void update(){
-
+		
 		for(int i = 0; i < n; i++){
 			npoints[i].force =  0;
-			npoints[i].force -= points[i].vel*k_frot;
 			
 			if(i >= 1)
 				npoints[i].force += points[i-1].h-points[i].h;
 			if(i < n-1)
 				npoints[i].force += points[i+1].h-points[i].h;
-			
-//			if(i == 0){
-//				npoints[i].force += (float) Math.sin(it*puls)/20;
-//			}
+			npoints[i].force *= k_ress;
 			
 			
 			
-			npoints[i].force *= k_ress/masse;
+			if(i == n-1){
+				npoints[i].force -= points[i].h*K;
+				npoints[i].force /= M;
+			} else{
+				npoints[i].force -= points[i].vel*k_frot;
+				npoints[i].force /= masse;
+			}
+			
+			
+			
+			
+			
 			npoints[i].vel = points[i].vel +  points[i].force*dt;
 			npoints[i].h = points[i].h + (points[i].vel+npoints[i].vel)/2f*dt +  points[i].force/2f*dt*dt;
 			
-			if(i == 0 && it*puls < MathUtils.PI*2f*nbExcitation){
-				npoints[i].h = MathUtils.sin (it*puls) > 0f ? 2f : -2f;
+			if(i == 0 && it*freq < nbExcitation){
+//				npoints[i].h = MathUtils.sin (it*puls) > 0f ? 2f : -2f;
+				npoints[i].h = MathUtils.sin (it*puls);
 				npoints[i].vel = 0f;
 			}
+			
+			if(measAmpl>0){
+				if(npoints[i].h>points[i].ampl)
+					npoints[i].ampl=npoints[i].h;
+			}
 		}
-
+		
+		if(measAmpl>0)
+			measAmpl+=1;
+		if(measAmpl*dt*freq>=2){
+			measAmpl=0;
+		}
 		it+=dt;
 		Point[] temp = points;
 		points = npoints;
@@ -118,6 +143,8 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 		if(showCelerity){
 			pixmap.setColor(Color.GOLD);
 			pixmap.fillRectangle(0, 0, (int) (celerity*it/pas), n);
+//			pixmap.setColor(Color.GREEN);
+//			pixmap.fillRectangle(0, n/2-n/10, n,2*n/10);
 			
 		}
 		if(showWaves){
@@ -135,6 +162,14 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 			} 
 
 		}
+		if(showAmpl){
+			pixmap.setColor(Color.GREEN);
+			for (int i = 0; i < n; i++) {
+
+				pixmap.drawLine(i, n /2, i, n /2 + (int)( points[i].ampl*n/10));
+			} 
+
+		}
 		batch.begin();
 		batch.draw(pixmapTexture, 
 				0f, 0f, 500f, 500f); //draw pixmap texture
@@ -148,10 +183,10 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 	public boolean keyDown(int keycode) {
 
 		if(keycode == Keys.UP){
-			msDelay += 1;
+			puls *= 2;
 		}
 		if(keycode == Keys.DOWN){
-			msDelay -= 1;
+			puls /= 2;
 		}
 		if(keycode == Keys.V){
 			showVector = !showVector;
@@ -173,6 +208,14 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 		}
 		if(keycode == Keys.C){
 			showCelerity=!showCelerity;
+		}
+		if(keycode == Keys.A){
+			for(int i = 0; i < n; i++){
+				points[i].ampl=0f;
+				npoints[i].ampl=0f;
+			}
+			measAmpl=1;
+			showAmpl=true;
 		}
 		return false;
 	}
