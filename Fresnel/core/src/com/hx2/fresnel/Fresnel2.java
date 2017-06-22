@@ -96,11 +96,8 @@ public class Fresnel2 extends ApplicationAdapter implements InputProcessor {
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-		while(lastUp + msDelay < System.currentTimeMillis()){
-			lastUp += msDelay;
-			for(int i = 0 ; i < itmult ; i++)
-				update();	
-		}
+		for(int i = 0 ; i < itmult ; i++)
+			update();	
 
 		pixmap.setColor(1f, 1f, 1f, 1f);
 		pixmap.fill();

@@ -14,17 +14,14 @@ public class Fonts {
 	static {
 		glyphLayout = new GlyphLayout();
 		FreeTypeFontGenerator generator = new FreeTypeFontGenerator(
-				Gdx.files.internal("fonts/coffee+teademo-Regular.ttf"));
+				Gdx.files.internal("coolvetica rg.ttf"));
 		FreeTypeFontParameter parameter = new FreeTypeFontParameter();
-		parameter.size = 72;
-		parameter.magFilter = TextureFilter.Linear;
-		parameter.minFilter = TextureFilter.MipMapLinearLinear;
-		parameter.genMipMaps = true;
-		parameter.shadowColor = Color.BLACK;
-		parameter.shadowOffsetX = 3;
-		parameter.shadowOffsetY = 3;
+		parameter.size = 24;
+//		parameter.magFilter = TextureFilter.Linear;
+//		parameter.minFilter = TextureFilter.MipMapLinearLinear;
+//		parameter.genMipMaps = true;
 		choiceFont = generator.generateFont(parameter); // font size 12 pixels
-		parameter.size = 72;
+		parameter.size = 12;
 		
 		generator.dispose();
 	}

@@ -58,6 +58,7 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 		points = new Point[n];
 		initPoints();
 		lastUp = System.currentTimeMillis();
+		
 		Gdx.input.setInputProcessor(this);
 	}
 
@@ -131,20 +132,14 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 	public void render () {
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
-
-		while(lastUp + msDelay < System.currentTimeMillis()){
-			lastUp += msDelay;
-			for(int i = 0 ; i < itmult ; i++)
+		for(int i = 0 ; i < itmult ; i++)
 				update();	
-		}
-
+		
 		pixmap.setColor(1f, 1f, 1f, 1f);
 		pixmap.fill();
 		if(showCelerity){
 			pixmap.setColor(Color.GOLD);
 			pixmap.fillRectangle(0, 0, (int) (celerity*it/pas), n);
-//			pixmap.setColor(Color.GREEN);
-//			pixmap.fillRectangle(0, n/2-n/10, n,2*n/10);
 			
 		}
 		if(showWaves){
@@ -171,10 +166,9 @@ public class Fresnel3 extends ApplicationAdapter implements InputProcessor {
 
 		}
 		batch.begin();
+		pixmapTexture.draw(pixmap, 0, 0);
 		batch.draw(pixmapTexture, 
 				0f, 0f, 500f, 500f); //draw pixmap texture
-		Gdx.gl.glTexSubImage2D(Gdx.gl.GL_TEXTURE_2D, 0, 0, 0, pixmapTexture.getWidth(), pixmapTexture.getHeight(), //
-			pixmap.getGLFormat(), pixmap.getGLType(), pixmap.getPixels());
 		batch.end();
 
 	}

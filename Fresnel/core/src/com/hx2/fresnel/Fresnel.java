@@ -185,11 +185,8 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		Gdx.gl.glClearColor(1, 1, 1, 1);
 		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-		while(lastUp + msDelay < System.currentTimeMillis()){
-			lastUp += msDelay;
-			for(int i = 0 ; i < itmult ; i++)
-				update();	
-		}
+		for(int i = 0 ; i < itmult ; i++)
+			update();	
 
 
 		pixmap.setColor(1f, 1f, 1f, 1f);
@@ -251,12 +248,13 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 					pixmap.drawLine(i*mag, (int) (pixmap.getWidth()/2f + points[i][10].h*pixmap.getWidth()/10f), (i+1)*mag, (int) (pixmap.getWidth()/2f + points[i+1][10].h*pixmap.getWidth()/10f));
 			} 
 		}
-		
 		batch.begin();
+		pixmapTexture.draw(pixmap, 0, 0);
 		batch.draw(pixmapTexture, 
 				Gdx.graphics.getWidth() / 2f - pixmapTexture.getWidth() /2f, Gdx.graphics.getHeight() /2f - pixmapTexture.getHeight() / 2f); //draw pixmap texture
-		Gdx.gl.glTexSubImage2D(GL20.GL_TEXTURE_2D, 0, 0, 0, pixmapTexture.getWidth(), pixmapTexture.getHeight(), //
-				pixmap.getGLFormat(), pixmap.getGLType(), pixmap.getPixels());
+		batch.end();
+		batch.begin();
+//		Fonts.choiceFont.draw(batch, "Dhuruhe", 20, 20);
 		batch.end();
 
 	}
