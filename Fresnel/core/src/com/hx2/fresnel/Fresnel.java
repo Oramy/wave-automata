@@ -27,6 +27,7 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		public float vel;
 		public float h;
 		public float force;
+		public float ampl;
 	}
 
 	SpriteBatch batch;
@@ -38,11 +39,13 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 	List<Wall> walls; 
 
 	long msDelay = 16, lastUp;
-	int n = 400;
+	int n = 200;
 	int it = 0;
 	private boolean showWaves = true;
+	private boolean showAmpl = false;
+	private int measAmpl = 0;
 	private int itmult = 20;
-	private float ondefreq = 1f/2f;
+	private float ondefreq = 1f/4f;
 
 	private int nbExcitation = 0;
 	private boolean source = false;
@@ -67,9 +70,9 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		this.coupures = new ArrayList<Coupure>();
 		
 		
-		addWall(new Wall(0, n/2-5, n/2-8, 10, 10f, Direction.Up));
-		addWall(new Wall(n/2-2, n/2-5, 4, 10, 10f, Direction.Up));
-		addWall(new Wall(n/2+8, n/2-5, n/2-8-1, 10, 10f, Direction.Up));
+		addWall(new Wall(0, n/2-n*5/100, n/2-n*8/100, 10*n/100, 10f, Direction.Up));
+		addWall(new Wall(n/2-2*n/100, n/2-5*n/100, 4*n/100, 10*n/100, 10f, Direction.Up));
+		addWall(new Wall(n/2+8*n/100, n/2-5*n/100, n/2-8*n/100 -1, 10*n/100, 10f, Direction.Up));
 		
 		
 		
@@ -163,14 +166,25 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 				if(source && i==n/2 && j==n/2){
 					npoints[i][j].h=sin;
 				}
-				if(source && i==n/2+4 && j==n/2){
+				if(source && i==n/2+8 && j==n/2){
 					npoints[i][j].h=sin;
 				}
-				if(source && i==n/2-4 && j==n/2){
+				if(source && i==n/2-8 && j==n/2){
 					npoints[i][j].h=sinDephasee;
 				}
 			}
 		}
+		if(measAmpl>0){
+			for(int i = 0; i < n; i++){
+				for(int j = 0; j < n; j++){
+					if(npoints[i][j].h>points[i][j].ampl)
+						npoints[i][j].ampl=npoints[i][j].h;
+				}
+			}
+			measAmpl+=1;
+		}
+		if(measAmpl*dt*ondefreq>=3)
+			measAmpl=0;
 	}
 	public void update(){
 	
@@ -217,6 +231,16 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 						pixmap.drawPixel(i, j);
 					}
 				}
+			}
+			if(showAmpl){
+				for (int i = 0; i < n; i++) {
+					for (int j = 0; j < n; j++) {
+						float c = MathUtils.clamp(points[i][j].ampl-1, 0f, 1f);
+						pixmap.setColor(c, c, c, 1f);
+						pixmap.drawPixel(i, j);
+					}
+				}  
+
 			}
 			pixmap.setColor(1f, 0f, 0f, 1f);
 			for(Coupure coupure : coupures){
@@ -277,10 +301,10 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 			phi -= 5;
 		}
 		if(keycode == Keys.W){
-			addWall(8,0, 0, n-1);
-			addWall(n-1, 8, 0, 0);
-			addWall(n-9,0,n-1,n-1);
-			addWall(n-1,n-9,0,n-1);
+			addWall(8*n/100,0, 0, n-1);
+			addWall(n-1, 8*n/100, 0, 0);
+			addWall(n-8*n/100-1,0,n-1,n-1);
+			addWall(n-1,n-8*n/100-1,0,n-1);
 			
 		}
 		if(keycode == Keys.RIGHT){
@@ -294,6 +318,7 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 			walls.clear();
 			coupures.clear();
 			source=false;
+			showAmpl=false;
 			nbExcitation=0;
 		}
 		if(keycode == Keys.J){
@@ -304,6 +329,16 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		}
 		if(keycode == Keys.S){
 			source=!source;
+		}
+		if(keycode == Keys.A){
+			for(int i = 0; i < n; i++){
+				for(int j=0; j<n;j++){
+					points[i][j].ampl=0f;
+					npoints[i][j].ampl=0f;
+				}
+			}
+			measAmpl=1;
+			showAmpl=true;
 		}
 		return false;
 	}
