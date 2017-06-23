@@ -86,7 +86,7 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 			for(int j = 0; j < n; j++){
 				points[i][j] = new Point();
 				points[i][j].vel = 0f;
-				points[i][j].h = 0f;
+				points[i][j].h = 1f;
 
 				npoints[i][j] = new Point();
 				npoints[i][j].vel = 0f;
@@ -101,7 +101,6 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		for(int i = 0; i < n; i++){
 			for(int j = 0; j < n; j++){
 				force = 0f;
-
 				if(i >= 1)
 					force += (points[i-1][j].h-points[i][j].h);
 				if(i < n-1)
@@ -111,10 +110,14 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 				if(j < n-1)
 					force += (points[i][j+1].h-points[i][j].h);
 
-				for(Wall wall : walls){
-					force += wall.process(points, i, j);
-				}
 				points[i][j].force = force;
+			}
+		}
+		for (Wall wall : walls){
+			for(int i = (int) wall.x; i <= wall.x + wall.width; i++){
+				for(int j = (int) wall.y; j <= wall.y + wall.height; j++){
+					points[i][j].force += wall.forceProcess(points, i, j);
+				}
 			}
 		}
 		for(Coupure coupure : coupures){
@@ -146,23 +149,25 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 
 	}
 	public void updateCoordinates(){
+		float sin = 1f + MathUtils.sinDeg(((float)it)*ondefreq);
+		float sinDephasee = 1f +MathUtils.sinDeg(((float)it)*ondefreq+phi);
 		for(int i = 0; i < n; i++){
 			for(int j = 0; j < n; j++){
 				npoints[i][j].vel = points[i][j].vel +  points[i][j].force*dt;
 				npoints[i][j].h = points[i][j].h + (points[i][j].vel+npoints[i][j].vel)/2f*dt +  points[i][j].force/2f*dt*dt;
 				
 				if((j==n-1) && ((float)it * ondefreq)< 360f * nbExcitation){
-					npoints[i][j].h = MathUtils.sinDeg(((float)it)*ondefreq);
+					npoints[i][j].h = sin;
 				}
 				
 				if(source && i==n/2 && j==n/2){
-					npoints[i][j].h=MathUtils.sinDeg(((float)it)*ondefreq);
+					npoints[i][j].h=sin;
 				}
 				if(source && i==n/2+4 && j==n/2){
-					npoints[i][j].h=MathUtils.sinDeg(((float)it)*ondefreq);
+					npoints[i][j].h=sin;
 				}
 				if(source && i==n/2-4 && j==n/2){
-					npoints[i][j].h=MathUtils.sinDeg(((float)it)*ondefreq+phi);
+					npoints[i][j].h=sinDephasee;
 				}
 			}
 		}
@@ -190,8 +195,6 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		long startTime = System.currentTimeMillis();
 		for(int i = 0 ; i < itmult ; i++)
 			update();	
-		System.out.println(System.currentTimeMillis() - startTime);
-		System.out.println(Gdx.graphics.getDeltaTime());
 
 		pixmap.setColor(1f, 1f, 1f, 1f);
 		pixmap.fill();
@@ -200,7 +203,7 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 
 			for (int i = 0; i < n; i++) {
 				for (int j = 0; j < n; j++) {
-					float c = MathUtils.clamp(points[i][j].h/2f, -1f, 1f);
+					float c = MathUtils.clamp((points[i][j].h-1f)/2f, -1f, 1f);
 					c = (c+1f)/2f;
 					pixmap.setColor(c, c, c, 1f);
 					pixmap.drawPixel(i, j);

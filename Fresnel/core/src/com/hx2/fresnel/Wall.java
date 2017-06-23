@@ -68,22 +68,27 @@ public class Wall{
 		float force = 0f;
 		if(i >= x && i <= x + width
 				&& j >= y && j <= y + height){
-
-			switch(dir){
-			case Right:
-				force -= points[i][j].vel*K*((i - x)*(i - x)/(width*width));
-				break;
-			case Left:
-				force -= points[i][j].vel*K*(((x+width) - i)*((x+width))/(width*width));
-				break;
-			case Up:
-				force -= points[i][j].vel*K*((y+height) - j)*((y + height) - j)/(height*height);
-				break;
-			case Down:
-				force -= points[i][j].vel*K*((j - y)*(j - y)/(height*height));
-				break;
-			}	
+			forceProcess(points, i, j);
+			
 		}
+		return force;
+	}
+	public float forceProcess(Point[][] points, int i, int j) {
+		float force = 0f;
+		switch(dir){
+		case Right:
+			force -= points[i][j].vel*K*((i - x)*(i - x)/(width*width));
+			break;
+		case Left:
+			force -= points[i][j].vel*K*(((x+width) - i)*((x+width))/(width*width));
+			break;
+		case Up:
+			force -= points[i][j].vel*K*((y+height) - j)*((y + height) - j)/(height*height);
+			break;
+		case Down:
+			force -= points[i][j].vel*K*((j - y)*(j - y)/(height*height));
+			break;
+		}	
 		return force;
 	}
 }
