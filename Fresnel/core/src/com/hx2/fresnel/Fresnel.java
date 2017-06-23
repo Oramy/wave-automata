@@ -345,8 +345,8 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 	}
 	@Override
 	public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-		int i = screenX;
-		int j = screenY;
+		int i = screenX*n/Gdx.graphics.getWidth();
+		int j = screenY*n/Gdx.graphics.getHeight();
 		
 		
 		if(!originePosee){
