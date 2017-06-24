@@ -43,7 +43,7 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 	int it = 0;
 	private boolean showWaves = true;
 	private boolean showAmpl = false;
-	private int measAmpl = 0;
+	private boolean pause = false;
 	private int itmult = 20;
 	private float ondefreq = 1f/4f;
 
@@ -55,7 +55,7 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 	
 	private boolean originePosee = false;
 	private int originI, originJ = 0;
-	private float basicK = 5f;
+	private float basicK = 4f;
 
 	@Override
 	public void create () {
@@ -174,32 +174,29 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 				}
 			}
 		}
-		if(measAmpl>0){
+		if(showAmpl){
 			for(int i = 0; i < n; i++){
 				for(int j = 0; j < n; j++){
 					if(npoints[i][j].h>points[i][j].ampl)
 						npoints[i][j].ampl=npoints[i][j].h;
 				}
 			}
-			measAmpl+=1;
 		}
-		if(measAmpl*dt*ondefreq>=3)
-			measAmpl=0;
+//		if(measAmpl*dt*ondefreq>=3)
+//			measAmpl=0;
 	}
 	public void update(){
 	
-		
-		updateSpringForce();
-		
-		updateCoordinates();
-			
-			
-		it+=1;
-		Point[][] temp = points;
-		points = npoints;
-		npoints = temp;
-		
-		
+		if(!pause){
+			updateSpringForce();
+			updateCoordinates();
+	
+				
+			it+=1;
+			Point[][] temp = points;
+			points = npoints;
+			npoints = temp;
+		}
 	}
 	@Override
 	public void render () {
@@ -232,16 +229,6 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 					}
 				}
 			}
-			if(showAmpl){
-				for (int i = 0; i < n; i++) {
-					for (int j = 0; j < n; j++) {
-						float c = MathUtils.clamp(points[i][j].ampl-1, 0f, 1f);
-						pixmap.setColor(c, c, c, 1f);
-						pixmap.drawPixel(i, j);
-					}
-				}  
-
-			}
 			pixmap.setColor(1f, 0f, 0f, 1f);
 			for(Coupure coupure : coupures){
 				int i = coupure.i;
@@ -264,21 +251,31 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 					break;
 					
 				}
-				
-				
 			}
 		}
-		else
-		{
-			for (int i = 0; i < n-1; i++) {
-					pixmap.drawLine(0, pixmap.getHeight()/2, pixmap.getWidth(), pixmap.getHeight()/2);
-					float c = MathUtils.clamp(points[i][10].h/2f, -1f, 1f);
-					c = (c+1f)/2f;
+		
+//		else
+//		{
+//			for (int i = 0; i < n-1; i++) {
+//					pixmap.drawLine(0, pixmap.getHeight()/2, pixmap.getWidth(), pixmap.getHeight()/2);
+//					float c = MathUtils.clamp(points[i][10].h/2f, -1f, 1f);
+//					c = (c+1f)/2f;
+//
+//					pixmap.setColor(0,0,0, 1f);
+//					pixmap.drawLine(i, (int) (pixmap.getWidth()/2f + points[i][10].h*pixmap.getWidth()/10f), (i+1), (int) (pixmap.getWidth()/2f + points[i+1][10].h*pixmap.getWidth()/10f));
+//			} 
+//		}
+		if(showAmpl){
+			for (int i = 0; i < n; i++) {
+				for (int j = 0; j < n; j++) {
+					float c = MathUtils.clamp(points[i][j].ampl-1, 0f, 1f);
+					pixmap.setColor(c, c, c, 1f);
+					pixmap.drawPixel(i, j);
+				}
+			}  
 
-					pixmap.setColor(0,0,0, 1f);
-					pixmap.drawLine(i, (int) (pixmap.getWidth()/2f + points[i][10].h*pixmap.getWidth()/10f), (i+1), (int) (pixmap.getWidth()/2f + points[i+1][10].h*pixmap.getWidth()/10f));
-			} 
 		}
+		
 		batch.begin();
 		pixmapTexture.draw(pixmap, 0, 0);
 		batch.draw(pixmapTexture,  0f, 0f,
@@ -337,8 +334,21 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 					npoints[i][j].ampl=0f;
 				}
 			}
-			measAmpl=1;
 			showAmpl=true;
+			showWaves=false;
+		}
+		if(keycode == Keys.O){
+			for(int i = 0; i < n; i++){
+				for(int j=0; j<n;j++){
+					points[i][j].ampl=0f;
+					npoints[i][j].ampl=0f;
+				}
+			}
+			showAmpl=false;
+			showWaves=true;
+		}
+		if(keycode == Keys.P){
+			pause=!pause;
 		}
 		return false;
 	}
