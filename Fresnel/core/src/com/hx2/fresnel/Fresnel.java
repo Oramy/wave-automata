@@ -283,7 +283,7 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		batch.begin();
 		pixmapTexture.draw(pixmap, 0, 0);
 		batch.draw(pixmapTexture,  0f, 0f,
-				500f, 500f); //draw pixmap texture
+				Constants.WIDTH, Constants.HEIGHT); //draw pixmap texture
 		batch.end();
 		batch.begin();
 //		Fonts.choiceFont.draw(batch, "Dhuruhe", 20, 20);
