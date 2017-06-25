@@ -39,17 +39,18 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 	List<Wall> walls; 
 
 	long msDelay = 16, lastUp;
-	int n = 200;
+	int n = 300;
 	int it = 0;
 	private boolean showWaves = true;
 	private boolean showAmpl = false;
 	private boolean pause = false;
 	private int itmult = 20;
-	private float ondefreq = 1f/4f;
+	private float ondefreq = 1f/30f;
+	private float lambda = 1/ondefreq;
 
 	private int nbExcitation = 0;
 	private boolean source = false;
-	private float phi=0;
+	private float phi=180;
 
 	private float dt = 0.01f;
 	
@@ -152,24 +153,24 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 
 	}
 	public void updateCoordinates(){
-		float sin = 1f + MathUtils.sinDeg(((float)it)*ondefreq);
-		float sinDephasee = 1f +MathUtils.sinDeg(((float)it)*ondefreq+phi);
+		float sin = 1f + MathUtils.sinDeg(((float)it)*dt*ondefreq*360);
+		float sinDephasee = 1f +MathUtils.sinDeg(((float)it)*dt*ondefreq*360+phi);
 		for(int i = 0; i < n; i++){
 			for(int j = 0; j < n; j++){
 				npoints[i][j].vel = points[i][j].vel +  points[i][j].force*dt;
 				npoints[i][j].h = points[i][j].h + (points[i][j].vel+npoints[i][j].vel)/2f*dt +  points[i][j].force/2f*dt*dt;
 				
-				if((j==n-1) && ((float)it * ondefreq)< 360f * nbExcitation){
+				if((j==n-1) && ((float)it*dt * ondefreq)<= nbExcitation){
 					npoints[i][j].h = sin;
 				}
 				
 				if(source && i==n/2 && j==n/2){
 					npoints[i][j].h=sin;
 				}
-				if(source && i==n/2+8 && j==n/2){
-					npoints[i][j].h=sin;
+				if(source && i==n/2+(int) (lambda/2f) && j==n/2){
+					npoints[i][j].h=sinDephasee;
 				}
-				if(source && i==n/2-8 && j==n/2){
+				if(source && i==n/2-(int) (lambda/2f) && j==n/2){
 					npoints[i][j].h=sinDephasee;
 				}
 			}
@@ -275,6 +276,9 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 			}  
 
 		}
+		
+//		pixmap.setColor(Color.CYAN);
+//		pixmap.drawLine(pixmap.getWidth()/2, pixmap.getHeight()/2, pixmap.getWidth()/2 + (int) lambda, pixmap.getHeight()/2);
 		
 		batch.begin();
 		pixmapTexture.draw(pixmap, 0, 0);
