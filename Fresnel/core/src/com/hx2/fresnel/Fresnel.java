@@ -178,8 +178,8 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		if(showAmpl){
 			for(int i = 0; i < n; i++){
 				for(int j = 0; j < n; j++){
-					if(npoints[i][j].h>points[i][j].ampl)
-						npoints[i][j].ampl=npoints[i][j].h;
+					if(Math.abs(npoints[i][j].h)>points[i][j].ampl)
+						npoints[i][j].ampl=Math.abs(npoints[i][j].h);
 				}
 			}
 		}
