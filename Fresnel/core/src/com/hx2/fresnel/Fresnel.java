@@ -45,12 +45,23 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 	private boolean showAmpl = false;
 	private boolean pause = false;
 	private int itmult = 20;
-	private float ondefreq = 1f/30f;
+	private float ondefreq = 1f/10f;
 	private float lambda = 1/ondefreq;
+	
 
 	private int nbExcitation = 0;
 	private boolean source = false;
-	private float phi=180;
+	private float phi=90;
+	
+	private boolean cristal = false;
+	private int ecart = (int) (lambda/2f);
+	private int taille = 20;
+	private int pos = (n-(taille-1) * ecart)/2;
+	
+	private boolean refrac = false;
+	private float k = 1.3f;
+	private float inclinaison = -0.3f;
+		
 
 	private float dt = 0.01f;
 	
@@ -113,7 +124,10 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 					force += (points[i][j-1].h-points[i][j].h);
 				if(j < n-1)
 					force += (points[i][j+1].h-points[i][j].h);
-
+				
+				if(refrac && n/2 + inclinaison*i <=j)
+					force*=k;
+				
 				points[i][j].force = force;
 			}
 		}
@@ -154,7 +168,11 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 	}
 	public void updateCoordinates(){
 		float sin = 1f + MathUtils.sinDeg(((float)it)*dt*ondefreq*360);
-		float sinDephasee = 1f +MathUtils.sinDeg(((float)it)*dt*ondefreq*360+phi);
+		float sinDephase1 = 1f +MathUtils.sinDeg(((float)it)*dt*ondefreq*360+phi);
+		float sinDephase2 = 1f +MathUtils.sinDeg(((float)it)*dt*ondefreq*360-phi);
+		if(((float)it*dt * ondefreq)<= 1/4)
+			sin *= sin;
+		
 		for(int i = 0; i < n; i++){
 			for(int j = 0; j < n; j++){
 				npoints[i][j].vel = points[i][j].vel +  points[i][j].force*dt;
@@ -164,15 +182,29 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 					npoints[i][j].h = sin;
 				}
 				
-				if(source && i==n/2 && j==n/2){
-					npoints[i][j].h=sin;
+				if(source){
+					if(i==n/2 && j==n/2){
+						npoints[i][j].h=sin;
+					}
+					if(i==n/2+(int) (lambda/4f) && j==n/2){
+						npoints[i][j].h=sinDephase1;
+					}
+					if(i==n/2-(int) (lambda/4f) && j==n/2){
+						npoints[i][j].h=sinDephase2;
+					}
 				}
-				if(source && i==n/2+(int) (lambda/2f) && j==n/2){
-					npoints[i][j].h=sinDephasee;
+				
+				if(cristal){
+					for(int k=0; k<taille; k++){
+						for(int l=0; l<taille; l++){
+							if(i==pos+k*ecart && j==pos+l*ecart){
+								npoints[i][j].vel = 0;
+								npoints[i][j].h=1;
+							}
+						}
+					}
 				}
-				if(source && i==n/2-(int) (lambda/2f) && j==n/2){
-					npoints[i][j].h=sinDephasee;
-				}
+				
 			}
 		}
 		if(showAmpl){
@@ -277,6 +309,11 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 
 		}
 		
+		if(refrac){
+			pixmap.setColor(Color.RED);
+			pixmap.drawLine(0,n/2,n,(int) (n/2+n*inclinaison));
+		}
+		
 //		pixmap.setColor(Color.CYAN);
 //		pixmap.drawLine(pixmap.getWidth()/2, pixmap.getHeight()/2, pixmap.getWidth()/2 + (int) lambda, pixmap.getHeight()/2);
 		
@@ -354,6 +391,11 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		if(keycode == Keys.P){
 			pause=!pause;
 		}
+		if(keycode == Keys.C)
+			cristal = !cristal;
+		if(keycode == Keys.R)
+			refrac=!refrac;
+			
 		return false;
 	}
 
