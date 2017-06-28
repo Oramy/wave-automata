@@ -59,9 +59,11 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 	private int pos = (n-(taille-1) * ecart)/2;
 	
 	private boolean refrac = false;
-	private float k = 1.3f;
+	private float k = 2f;
 	private float inclinaison = -0.3f;
-		
+	
+	private boolean circle=false;
+	private int rayon=n/4;
 
 	private float dt = 0.01f;
 	
@@ -231,6 +233,13 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 			npoints = temp;
 		}
 	}
+	
+	public void cardoid(int x,int y){
+		float r=MathUtils.clamp(n*(points[n/2+x][n/2+y].ampl-1), 0, n/2-1);
+		float t=MathUtils.atan2(y, x);
+		pixmap.drawPixel(n/2 + (int) (r*MathUtils.cos(t)), n/2 + (int) (r*MathUtils.sin(t)));
+	}
+	
 	@Override
 	public void render () {
 		Gdx.gl.glClearColor(1, 1, 1, 1);
@@ -310,8 +319,30 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		}
 		
 		if(refrac){
-			pixmap.setColor(Color.RED);
+			pixmap.setColor(Color.GREEN);
 			pixmap.drawLine(0,n/2,n,(int) (n/2+n*inclinaison));
+		}
+		
+		if(circle){
+			pixmap.setColor(Color.BLUE);
+			pixmap.drawCircle(n/2, n/2, rayon);
+			pixmap.setColor(Color.GREEN);
+			int x=rayon;
+			int y=0;
+			int d=rayon*rayon;
+			float r=0;
+			float t=0;
+			while(x>=0){
+				if(x*x+(y+1)*(y+1)>=d){
+					x-=1;
+				}else{
+					y+=1;
+				}
+				cardoid(x,y);
+				cardoid(x,-y);
+				cardoid(-x,y);
+				cardoid(-x,-y);
+			}
 		}
 		
 //		pixmap.setColor(Color.CYAN);
@@ -395,6 +426,8 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 			cristal = !cristal;
 		if(keycode == Keys.R)
 			refrac=!refrac;
+		if(keycode == Keys.M)
+			circle=!circle;
 			
 		return false;
 	}
