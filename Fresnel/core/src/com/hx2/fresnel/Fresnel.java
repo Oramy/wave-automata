@@ -45,7 +45,7 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 	private boolean showAmpl = false;
 	private boolean pause = false;
 	private int itmult = 20;
-	private float ondefreq = 1f/10f;
+	private float ondefreq = 1f/20f;
 	private float lambda = 1/ondefreq;
 	
 
@@ -173,42 +173,38 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 		float sinDephase1 = 1f +MathUtils.sinDeg(((float)it)*dt*ondefreq*360+phi);
 		float sinDephase2 = 1f +MathUtils.sinDeg(((float)it)*dt*ondefreq*360-phi);
 		if(((float)it*dt * ondefreq)<= 1/4)
-			sin *= sin;
+			sin = 1f+(sin-1f)*(sin-1f);
 		
 		for(int i = 0; i < n; i++){
 			for(int j = 0; j < n; j++){
 				npoints[i][j].vel = points[i][j].vel +  points[i][j].force*dt;
 				npoints[i][j].h = points[i][j].h + (points[i][j].vel+npoints[i][j].vel)/2f*dt +  points[i][j].force/2f*dt*dt;
-				
-				if((j==n-1) && ((float)it*dt * ondefreq)<= nbExcitation){
-					npoints[i][j].h = sin;
-				}
-				
-				if(source){
-					if(i==n/2 && j==n/2){
-						npoints[i][j].h=sin;
-					}
-					if(i==n/2+(int) (lambda/4f) && j==n/2){
-						npoints[i][j].h=sinDephase1;
-					}
-					if(i==n/2-(int) (lambda/4f) && j==n/2){
-						npoints[i][j].h=sinDephase2;
-					}
-				}
-				
-				if(cristal){
-					for(int k=0; k<taille; k++){
-						for(int l=0; l<taille; l++){
-							if(i==pos+k*ecart && j==pos+l*ecart){
-								npoints[i][j].vel = 0;
-								npoints[i][j].h=1;
-							}
-						}
-					}
-				}
-				
+			}
+			
+			if(((float)it*dt * ondefreq)<= nbExcitation){
+				npoints[i][n-1].h = sin;
 			}
 		}
+				
+		if(source){
+			if(((float)it*dt * ondefreq)<= phi/360f)
+				sinDephase2=1;
+			if(((float)it*dt * ondefreq)<= 0.5-phi/360f)
+				sinDephase1=1;
+			npoints[n/2][n/2].h=sin;
+			npoints[n/2+(int) (lambda/4f)][n/2].h=sinDephase1;
+			npoints[n/2-(int) (lambda/4f)][n/2].h=sinDephase2;
+		}
+		
+		if(cristal){
+			for(int k=0; k<taille; k++){
+				for(int l=0; l<taille; l++){
+					npoints[pos+k*ecart][pos+l*ecart].vel = 0;
+					npoints[pos+k*ecart][pos+l*ecart].h=1;
+				}
+			}
+		}
+
 		if(showAmpl){
 			for(int i = 0; i < n; i++){
 				for(int j = 0; j < n; j++){
@@ -330,8 +326,6 @@ public class Fresnel extends ApplicationAdapter implements InputProcessor {
 			int x=rayon;
 			int y=0;
 			int d=rayon*rayon;
-			float r=0;
-			float t=0;
 			while(x>=0){
 				if(x*x+(y+1)*(y+1)>=d){
 					x-=1;
